@@ -3,12 +3,12 @@ import { useLocation } from 'wouter'
 import { useAuth } from '../contexts/AuthContext'
 import { useWallet } from '../contexts/WalletContext'
 import { motion } from 'framer-motion'
-import { 
-  TrendingUp, 
-  TrendingDown, 
-  DollarSign, 
-  Trophy, 
-  Target, 
+import {
+  TrendingUp,
+  TrendingDown,
+  DollarSign,
+  Trophy,
+  Target,
   Activity,
   ArrowRight,
   Plus,
@@ -24,12 +24,14 @@ import {
 } from 'lucide-react'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Pie, Cell } from 'recharts'
 import toast from 'react-hot-toast'
+import BetsService from '../services/bets-service'
 
 const Dashboard = () => {
   const [, setLocation] = useLocation()
   const { user } = useAuth()
   const { balance, walletType } = useWallet()
-  
+
+  const betsService = new BetsService()
   const [stats, setStats] = useState({
     totalBets: 0,
     wins: 0,
@@ -39,7 +41,7 @@ const Dashboard = () => {
     winRate: 0,
     roi: 0
   })
-  
+
   const [recentBets, setRecentBets] = useState([])
   const [performanceData, setPerformanceData] = useState([])
   const [bettingPatterns, setBettingPatterns] = useState([])
@@ -67,8 +69,7 @@ const Dashboard = () => {
   }
 
   const loadStats = async () => {
-    // Mock data - replace with actual API call
-    setStats({
+    const mockStats = {
       totalBets: 47,
       wins: 28,
       losses: 19,
@@ -76,7 +77,23 @@ const Dashboard = () => {
       totalWon: 1890.75,
       winRate: 59.6,
       roi: 51.2
-    })
+    }
+
+    try {
+      const response = await betsService.getTotalBets()
+      if (response?.success) {
+        const totalBets = Number(response.data?.totalBets ?? mockStats.totalBets)
+        setStats({
+          ...mockStats,
+          totalBets: Number.isFinite(totalBets) ? totalBets : mockStats.totalBets
+        })
+        return
+      }
+      throw new Error(response?.message || 'Failed to load total bets')
+    } catch (error) {
+      toast.error('Failed to load total bets')
+      setStats(mockStats)
+    }
   }
 
   const loadRecentBets = async () => {
@@ -315,17 +332,17 @@ const Dashboard = () => {
                   <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
                   <XAxis dataKey="date" stroke="#9CA3AF" />
                   <YAxis stroke="#9CA3AF" />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: '#1F2937', 
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: '#1F2937',
                       border: '1px solid #374151',
                       borderRadius: '8px'
                     }}
                   />
-                  <Line 
-                    type="monotone" 
-                    dataKey="profit" 
-                    stroke="#3B82F6" 
+                  <Line
+                    type="monotone"
+                    dataKey="profit"
+                    stroke="#3B82F6"
                     strokeWidth={3}
                     dot={{ fill: '#3B82F6', strokeWidth: 2, r: 4 }}
                   />
@@ -361,9 +378,9 @@ const Dashboard = () => {
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: '#1F2937', 
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: '#1F2937',
                       border: '1px solid #374151',
                       borderRadius: '8px'
                     }}
@@ -374,8 +391,8 @@ const Dashboard = () => {
             <div className="grid grid-cols-2 gap-2 mt-4">
               {bettingPatterns.map((pattern, index) => (
                 <div key={pattern.name} className="flex items-center gap-2">
-                  <div 
-                    className="w-3 h-3 rounded-full" 
+                  <div
+                    className="w-3 h-3 rounded-full"
                     style={{ backgroundColor: pattern.color }}
                   ></div>
                   <span className="text-sm text-gray-300">{pattern.name}</span>
