@@ -29,7 +29,7 @@ import BetsService from '../services/bets-service'
 const Dashboard = () => {
   const [, setLocation] = useLocation()
   const { user } = useAuth()
-  const { balance, walletType } = useWallet()
+  const { balance, walletType, totalBets } = useWallet()
 
   const betsService = new BetsService()
   const [stats, setStats] = useState({
@@ -50,6 +50,15 @@ const Dashboard = () => {
   useEffect(() => {
     loadDashboardData()
   }, [])
+
+  useEffect(() => {
+    if (totalBets > 0) {
+      setStats(prevStats => ({
+        ...prevStats,
+        totalBets
+      }))
+    }
+  }, [totalBets])
 
   const loadDashboardData = async () => {
     setIsLoading(true)
@@ -78,21 +87,26 @@ const Dashboard = () => {
       winRate: 59.6,
       roi: 51.2
     }
-
     try {
       const response = await betsService.getTotalBets()
       if (response?.success) {
-        const totalBets = Number(response.data?.totalBets ?? mockStats.totalBets)
+        const apiTotalBets = Number(response.data?.totalBets ?? mockStats.totalBets)
+        const resolvedTotalBets = Number.isFinite(apiTotalBets)
+          ? Math.max(apiTotalBets, totalBets || 0)
+          : Math.max(mockStats.totalBets, totalBets || 0)
         setStats({
           ...mockStats,
-          totalBets: Number.isFinite(totalBets) ? totalBets : mockStats.totalBets
+          totalBets: resolvedTotalBets
         })
         return
       }
       throw new Error(response?.message || 'Failed to load total bets')
     } catch (error) {
       toast.error('Failed to load total bets')
-      setStats(mockStats)
+      setStats({
+        ...mockStats,
+        totalBets: Math.max(mockStats.totalBets, totalBets || 0)
+      })
     }
   }
 
