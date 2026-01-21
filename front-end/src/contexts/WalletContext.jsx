@@ -43,28 +43,52 @@ export const WalletProvider = ({ children }) => {
     }
   }, [])
 
+  const getTotalBetsKey = (address) => {
+    if (!address) {
+      return 'totalBets:anonymous'
+    }
+    return `totalBets:${address}`
+  }
+
   useEffect(() => {
     if (typeof window === 'undefined') {
       return
     }
-    const storedTotalBets = window.localStorage.getItem('totalBets')
+    const storedTotalBets = window.localStorage.getItem(getTotalBetsKey(walletAddress))
     if (storedTotalBets) {
       const parsedTotal = Number(storedTotalBets)
       if (Number.isFinite(parsedTotal)) {
         setTotalBets(parsedTotal)
       }
+    } else {
+      setTotalBets(0)
     }
-  }, [])
+  }, [walletAddress])
 
-  const persistTotalBets = (nextTotal) => {
+  const persistTotalBets = (nextTotal, address = walletAddress) => {
     if (typeof window === 'undefined') {
       return
     }
     try {
-      window.localStorage.setItem('totalBets', String(nextTotal))
+      window.localStorage.setItem(getTotalBetsKey(address), String(nextTotal))
     } catch (error) {
       console.error('Failed to persist total bets:', error)
     }
+  }
+  const setTotalBetsValue = (nextTotal) => {
+    if (!Number.isFinite(nextTotal) || nextTotal < 0) {
+      return
+    }
+    setTotalBets(nextTotal)
+    persistTotalBets(nextTotal)
+  }
+
+  const incrementTotalBets = () => {
+    setTotalBets(prevTotal => {
+      const nextTotal = prevTotal + 1
+      persistTotalBets(nextTotal)
+      return nextTotal
+    })
   }
   const connectWallet = async (type) => {
     setIsLoading(true)
@@ -295,11 +319,7 @@ export const WalletProvider = ({ children }) => {
 
       setTransactions(prev => [newTransaction, ...prev])
 
-      setTotalBets(prevTotal => {
-        const nextTotal = prevTotal + 1
-        persistTotalBets(nextTotal)
-        return nextTotal
-      })
+      incrementTotalBets()
 
       toast.success(`Bet placed successfully! Amount: ${amount} ${currency}`)
       return true
@@ -351,6 +371,7 @@ export const WalletProvider = ({ children }) => {
     sendTransaction,
     depositFunds,
     placeBet,
+    setTotalBetsValue,
     getSupportedWallets,
     loadBalances: () => loadBalances(walletAddress, walletType)
   }
