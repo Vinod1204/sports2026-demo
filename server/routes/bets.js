@@ -22,11 +22,11 @@ router.get('/get-active-round', async (req, res) => {
             message: 'There is no active round currently, please come back again later!',
             data: {}
         });
-    }    
+    }
 
     let activeFixture = activeFixtures[0];
 
-    if(activeFixture.betsAcceptedBy < Date.now()) {
+    if (activeFixture.betsAcceptedBy < Date.now()) {
         return res.status(200).json({
             success: false,
             message: 'Sorry, we are no longer accepting bets for this round',
@@ -97,6 +97,27 @@ router.post('/submit', async (req, res) => {
             data: {}
         });
 
+    } catch (err) {
+        console.log(err)
+        return res.status(500).json({
+            success: false,
+            message: err,
+            data: {}
+        })
+    }
+})
+
+router.get('/total', async (req, res) => {
+    const userId = req.user._id;
+
+    try {
+        const totalBets = await UserBets.countDocuments({ userId });
+
+        return res.status(200).json({
+            success: true,
+            message: ``,
+            data: { totalBets }
+        });
     } catch (err) {
         console.log(err)
         return res.status(500).json({
