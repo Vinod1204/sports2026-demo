@@ -315,7 +315,7 @@ const Predictions = () => {
                   Key Factors
                 </h5>
                 <ul className="space-y-1">
-                  {prediction.factors?.slice(0, 3).map((factor, idx) => (
+                   {prediction.factors?.slice(0, 3)?.map((factor, idx) => (
                     <li key={idx} className="text-xs text-gray-400 flex items-center">
                       <div className="w-1 h-1 bg-blue-400 rounded-full mr-2"></div>
                       {factor}
